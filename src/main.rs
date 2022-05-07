@@ -1,16 +1,28 @@
 
    
 #![warn(clippy::all, clippy::pedantic)]
-use warp::Filter;
+use warp::{Filter, http::Response, http::Result};
+
+
+mod image;
 
 fn index_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
   warp::get().and(warp::path::end().map(|| "Hello, World!")).boxed()
 }
 
 fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
+  fn get_image_response(w: u16, h: u16) -> Result<Response<Vec<u8>>> {
+    match image::generate(w, h) {
+      Ok((img, ext)) => Response::builder().header("content-type", format!("image/{}", ext)).body(img),
+      Err((status, message)) => Response::builder().status(status).body(message.into())
+    }
+  }
+
   let image = warp::path("g");
-  let rectangle = image.and(warp::path!(u16 / u16).map(|width, height| format!("rectangle: {}x{}", width, height)));
-  let square = image.and(warp::path!(u16).and(warp::path::end()).map(|size| format!("square: {}x{}", size, size)));
+  let rectangle = image.and(warp::path!(u16 / u16).map(get_image_response));
+  let square = image.and(warp::path!(u16).and(warp::path::end()).map(|size| {
+    get_image_response(size, size)
+  }));
 
   warp::get().and(rectangle.or(square)).boxed()
 }
@@ -40,7 +52,8 @@ async fn generate_rectangle() {
   let res = req.reply(&generate_route()).await;
 
   assert_eq!(res.status(), 200);
-  assert_eq!(res.body(), "rectangle: 150x300");
+  assert!(!res.body().is_empty());
+  assert_eq!(res.headers()["content-type"], "image/png");
 }
 
 #[tokio::test]
@@ -49,5 +62,6 @@ async fn generate_square() {
   let res = req.reply(&generate_route()).await;
 
   assert_eq!(res.status(), 200);
-  assert_eq!(res.body(), "square: 150x150");
+  assert!(!res.body().is_empty());
+  assert_eq!(res.headers()["content-type"], "image/png");
 }
