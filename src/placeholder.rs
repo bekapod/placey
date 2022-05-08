@@ -7,6 +7,7 @@ use std::io::Cursor;
 
 const MAX_AREA: u32 = 1_000_000;
 const MAX_SIDE: u16 = 2500;
+const DEFAULT_BACKGROUND_COLOUR: &str = "FFFF00";
 
 #[allow(clippy::cast_possible_truncation)] // the whole point of this is to truncate 😜
 fn convert_f64_to_i32(x: f64) -> i32 {
@@ -29,7 +30,7 @@ fn check_size(w: u16, h: u16) -> Result<(), ()> {
 pub struct GenerateOptions {
     pub width: u16,
     pub height: Option<u16>,
-    pub background_color: Option<String>,
+    pub background_colour: Option<String>,
 }
 
 /// # Errors
@@ -37,19 +38,26 @@ pub struct GenerateOptions {
 /// Will return `Err` if desired width & height would result in an image that is too big.
 #[tracing::instrument]
 pub fn generate(opts: GenerateOptions) -> Result<(Vec<u8>, String), (u16, String)> {
-    match (opts.width, opts.height) {
-    (w, Some(h)) if check_size(w, h).is_ok() => {
-      create_image(w, h)
+    log::debug!("generate options: {:?}", opts);
+    match (opts.width, opts.height, opts.background_colour) {
+    (w, Some(h), Some(bg)) if check_size(w, h).is_ok() => {
+        create_image(w, h, &bg)
     },
-    (w, None) if check_size(w, w).is_ok() => {
-      create_image(w, w)
+    (w, Some(h), None) if check_size(w, h).is_ok() => {
+      create_image(w, h, DEFAULT_BACKGROUND_COLOUR)
+    },
+    (w, None, Some(bg)) if check_size(w, w).is_ok() => {
+        create_image(w, w, &bg)
     }
-    (_, _) => Err((422, format!("Image too big. Total area must be less than or equal to {}px and the maximum length of any side must be less than or equal to {}px.", MAX_AREA, MAX_SIDE))),
+    (w, None, None) if check_size(w, w).is_ok() => {
+      create_image(w, w, DEFAULT_BACKGROUND_COLOUR)
+    }
+    (_, _, _) => Err((422, format!("Image too big. Total area must be less than or equal to {}px and the maximum length of any side must be less than or equal to {}px.", MAX_AREA, MAX_SIDE))),
   }
 }
 
 #[tracing::instrument]
-fn create_image(width: u16, height: u16) -> Result<(Vec<u8>, String), (u16, String)> {
+fn create_image(width: u16, height: u16, background_colour: &str) -> Result<(Vec<u8>, String), (u16, String)> {
     let mut buffer = Cursor::new(vec![]);
     let mut rgb = RgbImage::from_pixel(width.into(), height.into(), Rgb([255, 255, 0]));
 
