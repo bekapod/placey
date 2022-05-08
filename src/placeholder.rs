@@ -8,6 +8,7 @@ use std::io::{Cursor};
 const MAX_AREA: u32 = 1_000_000;
 const MAX_SIDE: u16 = 2500;
 
+#[allow(clippy::cast_possible_truncation)] // the whole point of this is to truncate 😜
 fn convert_f64_to_i32(x: f64) -> i32 { x.round().rem_euclid(2f64.powi(32)) as i32 }
 
 fn check_size(w: u16, h: u16) -> Result<(), ()> {
@@ -22,6 +23,9 @@ fn check_size(w: u16, h: u16) -> Result<(), ()> {
   Err(())
 }
 
+/// # Errors
+///
+/// Will return `Err` if desired width & height would result in an image that is too big.
 pub fn generate(width: u16, height: u16) -> Result<(Vec<u8>, String), (u16, String)> {
   match (width, height) {
     (w, h) if check_size(w, h).is_ok() => {
@@ -29,25 +33,29 @@ pub fn generate(width: u16, height: u16) -> Result<(Vec<u8>, String), (u16, Stri
       let mut rgb = RgbImage::from_pixel(w.into(), h.into(), Rgb([255, 255, 0]));
 
       let font = Vec::from(include_bytes!("assets/AzeretMono-Regular.ttf") as &[u8]);
-      let font = Font::try_from_vec(font).unwrap();
+      let font = Font::try_from_vec(font);
 
-      let text = format!("{}×{}", w, h);
+      if let Some(font) = font {
+        let text = format!("{}×{}", w, h);
 
-      let scale = match f32::from(w) {
-        w if w > 999.0 => w * 0.15,
-        w if w < 100.0 => w * 0.25,
-        w => w * 0.2
-      };
-      let scale = Scale {
-          x: scale,
-          y: scale,
-      };
+        let scale = match f32::from(w) {
+          w if w > 999.0 => w * 0.15,
+          w if w < 100.0 => w * 0.25,
+          w => w * 0.2
+        };
+        let scale = Scale {
+            x: scale,
+            y: scale,
+        };
 
-      let (text_width, text_height) = text_size(scale, &font, &text);
-      let x = i32::from(width / 2) - (text_width / 2);
-      let y = i32::from(height / 2) - convert_f64_to_i32(f64::from(text_height) / 1.65);
+        let (text_width, text_height) = text_size(scale, &font, &text);
+        let x = i32::from(width / 2) - (text_width / 2);
+        let y = i32::from(height / 2) - convert_f64_to_i32(f64::from(text_height) / 1.65);
 
-      draw_text_mut(&mut rgb, Rgb([0, 0, 0]), x, y, scale, &font, &text);
+        draw_text_mut(&mut rgb, Rgb([0, 0, 0]), x, y, scale, &font, &text);
+      } else {
+        // log
+      }
 
       let img = DynamicImage::ImageRgb8(rgb);
       match img.write_to(&mut buffer, Png) {
