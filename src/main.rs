@@ -4,12 +4,10 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use warp::{http::Response, http::Result, Filter};
 
 fn index_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
+    let body = include_str!("ui/index.html");
     warp::get()
-        .and(warp::path::end().map(|| {
-            tracing::info!("route: index");
-            "Hello, World!"
-        }))
-        .with(warp::trace::named("index"))
+        .and(warp::path::end())
+        .map(move || warp::reply::html(body))
         .boxed()
 }
 
@@ -71,7 +69,6 @@ fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
             square.or(rectangle.or(rectangle_with_background_colour
                 .or(rectangle_with_background_colour_and_foreground_colour))),
         )
-        .with(warp::trace::named("generate"))
         .boxed()
 }
 
@@ -85,8 +82,9 @@ async fn main() {
 
 #[tracing::instrument]
 async fn outer() {
-    let end = index_route()
-        .or(generate_route())
+    let end = warp::path("dist")
+        .and(warp::fs::dir("./dist"))
+        .or(index_route().or(generate_route()))
         .with(warp::log("request"))
         .with(warp::trace::request());
 
