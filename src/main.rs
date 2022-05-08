@@ -2,9 +2,7 @@
    
 #![warn(clippy::all, clippy::pedantic)]
 use warp::{Filter, http::Response, http::Result};
-
-
-mod image;
+use placey::placeholder;
 
 fn index_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
   warp::get().and(warp::path::end().map(|| "Hello, World!")).boxed()
@@ -12,7 +10,7 @@ fn index_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
 
 fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
   fn get_image_response(w: u16, h: u16) -> Result<Response<Vec<u8>>> {
-    match image::generate(w, h) {
+    match placeholder::generate(w, h) {
       Ok((img, ext)) => Response::builder().header("content-type", format!("image/{}", ext)).body(img),
       Err((status, message)) => Response::builder().status(status).body(message.into())
     }
@@ -39,29 +37,29 @@ async fn main() {
 
 #[tokio::test]
 async fn landing() {
-  let req = warp::test::request();
-  let res = req.reply(&index_route()).await;
+  let request = warp::test::request();
+  let response = request.reply(&index_route()).await;
 
-  assert_eq!(res.status(), 200);
-  assert!(!res.body().is_empty());
+  assert_eq!(response.status(), 200);
+  assert!(!response.body().is_empty());
 }
 
 #[tokio::test]
 async fn generate_rectangle() {
-  let req = warp::test::request().path("/g/150/300");
-  let res = req.reply(&generate_route()).await;
+  let request = warp::test::request().path("/g/150/300");
+  let response = request.reply(&generate_route()).await;
 
-  assert_eq!(res.status(), 200);
-  assert!(!res.body().is_empty());
-  assert_eq!(res.headers()["content-type"], "image/png");
+  assert_eq!(response.status(), 200);
+  assert!(!response.body().is_empty());
+  assert_eq!(response.headers()["content-type"], "image/png");
 }
 
 #[tokio::test]
 async fn generate_square() {
-  let req = warp::test::request().path("/g/150");
-  let res = req.reply(&generate_route()).await;
+  let request = warp::test::request().path("/g/150");
+  let response = request.reply(&generate_route()).await;
 
-  assert_eq!(res.status(), 200);
-  assert!(!res.body().is_empty());
-  assert_eq!(res.headers()["content-type"], "image/png");
+  assert_eq!(response.status(), 200);
+  assert!(!response.body().is_empty());
+  assert_eq!(response.headers()["content-type"], "image/png");
 }
