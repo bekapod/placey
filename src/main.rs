@@ -27,7 +27,9 @@ fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
 
 #[tokio::main]
 async fn main() {
-  let end = index_route().with(warp::log("hello")).or(generate_route()).with(warp::log("generate"));
+  pretty_env_logger::init();
+
+  let end = index_route().or(generate_route()).with(warp::log("request"));
 
     warp::serve(end)
         // ipv6 + ipv6 any addr

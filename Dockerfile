@@ -1,5 +1,7 @@
 FROM rust:latest as builder
 
+ENV RUST_LOG=info
+
 # Make a fake Rust app to keep a cached layer of compiled crates
 RUN USER=root cargo new app
 WORKDIR /usr/src/app

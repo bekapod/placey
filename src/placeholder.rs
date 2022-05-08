@@ -54,7 +54,7 @@ pub fn generate(width: u16, height: u16) -> Result<(Vec<u8>, String), (u16, Stri
 
         draw_text_mut(&mut rgb, Rgb([0, 0, 0]), x, y, scale, &font, &text);
       } else {
-        // log
+        log::error!("Invalid font data.");
       }
 
       let img = DynamicImage::ImageRgb8(rgb);
