@@ -26,6 +26,7 @@ fn check_size(w: u16, h: u16) -> Result<(), ()> {
 /// # Errors
 ///
 /// Will return `Err` if desired width & height would result in an image that is too big.
+#[tracing::instrument]
 pub fn generate(width: u16, height: u16) -> Result<(Vec<u8>, String), (u16, String)> {
   match (width, height) {
     (w, h) if check_size(w, h).is_ok() => {

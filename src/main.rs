@@ -3,13 +3,18 @@
 #![warn(clippy::all, clippy::pedantic)]
 use warp::{Filter, http::Response, http::Result};
 use placey::placeholder;
+use tracing_subscriber::fmt::format::FmtSpan;
 
 fn index_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
-  warp::get().and(warp::path::end().map(|| "Hello, World!")).boxed()
+  warp::get().and(warp::path::end().map(|| {
+    tracing::info!("route: index");
+    "Hello, World!"
+  })).with(warp::trace::named("index")).boxed()
 }
 
 fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
   fn get_image_response(w: u16, h: u16) -> Result<Response<Vec<u8>>> {
+    tracing::info!("route: generate");
     match placeholder::generate(w, h) {
       Ok((img, ext)) => Response::builder().header("content-type", format!("image/{}", ext)).body(img),
       Err((status, message)) => Response::builder().status(status).body(message.into())
@@ -22,19 +27,23 @@ fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
     get_image_response(size, size)
   }));
 
-  warp::get().and(rectangle.or(square)).boxed()
+  warp::get().and(rectangle.or(square)).with(warp::trace::named("generate")).boxed()
 }
 
 #[tokio::main]
 async fn main() {
-  pretty_env_logger::init();
+  tracing_subscriber::fmt().with_span_events(FmtSpan::CLOSE).init();
+  outer().await;
+}
 
-  let end = index_route().or(generate_route()).with(warp::log("request"));
+#[tracing::instrument]
+async fn outer() {
+  let end = index_route().or(generate_route()).with(warp::log("request")).with(warp::trace::request());
 
-    warp::serve(end)
-        // ipv6 + ipv6 any addr
-        .run(([0, 0, 0, 0, 0, 0, 0, 0], 8080))
-        .await;
+  warp::serve(end)
+      // ipv6 + ipv6 any addr
+      .run(([0, 0, 0, 0, 0, 0, 0, 0], 8080))
+      .await;
 }
 
 #[tokio::test]
