@@ -1,6 +1,7 @@
 #![warn(clippy::all, clippy::pedantic)]
+use crate::colour::Rgb;
 use image::ImageOutputFormat::Png;
-use image::{DynamicImage, Rgb, RgbImage};
+use image::{DynamicImage, RgbImage};
 use imageproc::drawing::{draw_text_mut, text_size};
 use rusttype::{Font, Scale};
 use std::io::Cursor;
@@ -57,9 +58,28 @@ pub fn generate(opts: GenerateOptions) -> Result<(Vec<u8>, String), (u16, String
 }
 
 #[tracing::instrument]
-fn create_image(width: u16, height: u16, background_colour: &str) -> Result<(Vec<u8>, String), (u16, String)> {
+fn create_image(
+    width: u16,
+    height: u16,
+    background_colour: &str,
+) -> Result<(Vec<u8>, String), (u16, String)> {
     let mut buffer = Cursor::new(vec![]);
-    let mut rgb = RgbImage::from_pixel(width.into(), height.into(), Rgb([255, 255, 0]));
+    let background_colour = Rgb::from_hex(background_colour).unwrap_or(Rgb {
+        red: 255,
+        green: 255,
+        blue: 0,
+    });
+    let foreground_colour = background_colour.get_contrasting_colour();
+
+    let mut img = RgbImage::from_pixel(
+        width.into(),
+        height.into(),
+        image::Rgb([
+            background_colour.red,
+            background_colour.green,
+            background_colour.blue,
+        ]),
+    );
 
     let font = Vec::from(include_bytes!("assets/AzeretMono-Regular.ttf") as &[u8]);
     let font = Font::try_from_vec(font);
@@ -78,13 +98,24 @@ fn create_image(width: u16, height: u16, background_colour: &str) -> Result<(Vec
         let x = i32::from(width / 2) - (text_width / 2);
         let y = i32::from(height / 2) - convert_f64_to_i32(f64::from(text_height) / 1.65);
 
-        draw_text_mut(&mut rgb, Rgb([0, 0, 0]), x, y, scale, &font, &text);
+        draw_text_mut(
+            &mut img,
+            image::Rgb([
+                foreground_colour.red,
+                foreground_colour.green,
+                foreground_colour.blue,
+            ]),
+            x,
+            y,
+            scale,
+            &font,
+            &text,
+        );
     } else {
         log::error!("Invalid font data.");
     }
 
-    let img = DynamicImage::ImageRgb8(rgb);
-    match img.write_to(&mut buffer, Png) {
+    match DynamicImage::ImageRgb8(img).write_to(&mut buffer, Png) {
         Ok(_) => Ok((buffer.into_inner(), String::from("png"))),
         Err(_) => Err((500, String::from("Failed to generate image."))),
     }

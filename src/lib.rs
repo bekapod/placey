@@ -1,2 +1,2 @@
-pub mod placeholder;
 mod colour;
+pub mod placeholder;
