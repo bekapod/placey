@@ -29,6 +29,8 @@ fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
     let with_width = base.and(warp::path!(u16));
     let with_width_and_height = base.and(warp::path!(u16 / u16));
     let with_width_and_height_and_background_colour = base.and(warp::path!(u16 / u16 / String));
+    let with_width_and_height_and_background_colour_and_foreground_colour =
+        base.and(warp::path!(u16 / u16 / String / String));
 
     let square = with_width.map(|width| {
         get_image_response(placeholder::GenerateOptions {
@@ -49,11 +51,26 @@ fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
                 width,
                 height: Some(height),
                 background_colour: Some(background_colour),
+                ..placeholder::GenerateOptions::default()
             })
         });
+    let rectangle_with_background_colour_and_foreground_colour =
+        with_width_and_height_and_background_colour_and_foreground_colour.map(
+            |width, height, background_colour, foreground_colour| {
+                get_image_response(placeholder::GenerateOptions {
+                    width,
+                    height: Some(height),
+                    background_colour: Some(background_colour),
+                    foreground_colour: Some(foreground_colour),
+                })
+            },
+        );
 
     warp::get()
-        .and(square.or(rectangle.or(rectangle_with_background_colour)))
+        .and(
+            square.or(rectangle.or(rectangle_with_background_colour
+                .or(rectangle_with_background_colour_and_foreground_colour))),
+        )
         .with(warp::trace::named("generate"))
         .boxed()
 }
@@ -111,6 +128,16 @@ async fn generate_rectangle() {
 #[tokio::test]
 async fn generate_rectangle_with_background_colour() {
     let request = warp::test::request().path("/g/150/300/fff000");
+    let response = request.reply(&generate_route()).await;
+
+    assert_eq!(response.status(), 200);
+    assert!(!response.body().is_empty());
+    assert_eq!(response.headers()["content-type"], "image/png");
+}
+
+#[tokio::test]
+async fn generate_rectangle_with_background_colour_and_foreground_colour() {
+    let request = warp::test::request().path("/g/150/300/fff000/ff1200");
     let response = request.reply(&generate_route()).await;
 
     assert_eq!(response.status(), 200);

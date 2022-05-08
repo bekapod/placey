@@ -8,7 +8,6 @@ use std::io::Cursor;
 
 const MAX_AREA: u32 = 1_000_000;
 const MAX_SIDE: u16 = 2500;
-const DEFAULT_BACKGROUND_COLOUR: &str = "FFFF00";
 
 #[allow(clippy::cast_possible_truncation)] // the whole point of this is to truncate 😜
 fn convert_f64_to_i32(x: f64) -> i32 {
@@ -32,6 +31,7 @@ pub struct GenerateOptions {
     pub width: u16,
     pub height: Option<u16>,
     pub background_colour: Option<String>,
+    pub foreground_colour: Option<String>,
 }
 
 /// # Errors
@@ -39,22 +39,24 @@ pub struct GenerateOptions {
 /// Will return `Err` if desired width & height would result in an image that is too big.
 #[tracing::instrument]
 pub fn generate(opts: GenerateOptions) -> Result<(Vec<u8>, String), (u16, String)> {
-    log::debug!("generate options: {:?}", opts);
-    match (opts.width, opts.height, opts.background_colour) {
-    (w, Some(h), Some(bg)) if check_size(w, h).is_ok() => {
-        create_image(w, h, &bg)
-    },
-    (w, Some(h), None) if check_size(w, h).is_ok() => {
-      create_image(w, h, DEFAULT_BACKGROUND_COLOUR)
-    },
-    (w, None, Some(bg)) if check_size(w, w).is_ok() => {
-        create_image(w, w, &bg)
+    match (
+        opts.width,
+        opts.height,
+        opts.background_colour,
+        opts.foreground_colour,
+    ) {
+        (w, Some(h), Some(bg), Some(fg)) if check_size(w, h).is_ok() => {
+            create_image(w, h, &bg, &fg)
+        }
+        (w, Some(h), Some(bg), None) if check_size(w, h).is_ok() => create_image(w, h, &bg, ""),
+        (w, Some(h), None, Some(fg)) if check_size(w, h).is_ok() => create_image(w, h, "", &fg),
+        (w, Some(h), None, None) if check_size(w, h).is_ok() => create_image(w, h, "", ""),
+        (w, None, Some(bg), Some(fg)) if check_size(w, w).is_ok() => create_image(w, w, &bg, &fg),
+        (w, None, Some(bg), None) if check_size(w, w).is_ok() => create_image(w, w, &bg, ""),
+        (w, None, None, Some(fg)) if check_size(w, w).is_ok() => create_image(w, w, "", &fg),
+        (w, None, None, None) if check_size(w, w).is_ok() => create_image(w, w, "", ""),
+        (_, _, _, _) => Err((422, format!("Image too big. Total area must be less than or equal to {}px and the maximum length of any side must be less than or equal to {}px.", MAX_AREA, MAX_SIDE))),
     }
-    (w, None, None) if check_size(w, w).is_ok() => {
-      create_image(w, w, DEFAULT_BACKGROUND_COLOUR)
-    }
-    (_, _, _) => Err((422, format!("Image too big. Total area must be less than or equal to {}px and the maximum length of any side must be less than or equal to {}px.", MAX_AREA, MAX_SIDE))),
-  }
 }
 
 #[tracing::instrument]
@@ -62,6 +64,7 @@ fn create_image(
     width: u16,
     height: u16,
     background_colour: &str,
+    foreground_colour: &str,
 ) -> Result<(Vec<u8>, String), (u16, String)> {
     let mut buffer = Cursor::new(vec![]);
     let background_colour = Rgb::from_hex(background_colour).unwrap_or(Rgb {
@@ -69,7 +72,8 @@ fn create_image(
         green: 255,
         blue: 0,
     });
-    let foreground_colour = background_colour.get_contrasting_colour();
+    let foreground_colour = Rgb::from_hex(foreground_colour)
+        .unwrap_or_else(|_| background_colour.get_contrasting_colour());
 
     let mut img = RgbImage::from_pixel(
         width.into(),
