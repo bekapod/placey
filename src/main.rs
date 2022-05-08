@@ -1,15 +1,76 @@
 
    
 #![warn(clippy::all, clippy::pedantic)]
-use warp::Filter;
+use warp::{Filter, http::Response, http::Result};
+use placey::placeholder;
+use tracing_subscriber::fmt::format::FmtSpan;
+
+fn index_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
+  warp::get().and(warp::path::end().map(|| {
+    tracing::info!("route: index");
+    "Hello, World!"
+  })).with(warp::trace::named("index")).boxed()
+}
+
+fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
+  fn get_image_response(w: u16, h: u16) -> Result<Response<Vec<u8>>> {
+    tracing::info!("route: generate");
+    match placeholder::generate(w, h) {
+      Ok((img, ext)) => Response::builder().header("content-type", format!("image/{}", ext)).body(img),
+      Err((status, message)) => Response::builder().status(status).body(message.into())
+    }
+  }
+
+  let image = warp::path("g");
+  let rectangle = image.and(warp::path!(u16 / u16).map(get_image_response));
+  let square = image.and(warp::path!(u16).and(warp::path::end()).map(|size| {
+    get_image_response(size, size)
+  }));
+
+  warp::get().and(rectangle.or(square)).with(warp::trace::named("generate")).boxed()
+}
 
 #[tokio::main]
 async fn main() {
-    // Match any request and return hello world!
-    let routes = warp::any().map(|| "Hello, World!");
+  tracing_subscriber::fmt().with_span_events(FmtSpan::CLOSE).init();
+  outer().await;
+}
 
-    warp::serve(routes)
-        // ipv6 + ipv6 any addr
-        .run(([0, 0, 0, 0, 0, 0, 0, 0], 8080))
-        .await;
+#[tracing::instrument]
+async fn outer() {
+  let end = index_route().or(generate_route()).with(warp::log("request")).with(warp::trace::request());
+
+  warp::serve(end)
+      // ipv6 + ipv6 any addr
+      .run(([0, 0, 0, 0, 0, 0, 0, 0], 8080))
+      .await;
+}
+
+#[tokio::test]
+async fn landing() {
+  let request = warp::test::request();
+  let response = request.reply(&index_route()).await;
+
+  assert_eq!(response.status(), 200);
+  assert!(!response.body().is_empty());
+}
+
+#[tokio::test]
+async fn generate_rectangle() {
+  let request = warp::test::request().path("/g/150/300");
+  let response = request.reply(&generate_route()).await;
+
+  assert_eq!(response.status(), 200);
+  assert!(!response.body().is_empty());
+  assert_eq!(response.headers()["content-type"], "image/png");
+}
+
+#[tokio::test]
+async fn generate_square() {
+  let request = warp::test::request().path("/g/150");
+  let response = request.reply(&generate_route()).await;
+
+  assert_eq!(response.status(), 200);
+  assert!(!response.body().is_empty());
+  assert_eq!(response.headers()["content-type"], "image/png");
 }
