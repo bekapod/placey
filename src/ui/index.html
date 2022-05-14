@@ -45,6 +45,15 @@
         height: 768,
         backgroundColour: '#fda4af',
         foregroundColour: '#000000',
+        get imageUrl() {
+          return `/g/${this.width}/${this.height}/${this.backgroundColour.substring(1)}/${this.foregroundColour.substring(1)}`;
+        },
+        get imageDescription() {
+          return `Placeholder image. Width: ${this.width}px, height: ${this.height}px, background colour: ${this.backgroundColour}, foreground colour: ${this.foregroundColour}`;
+        },
+        get publicImageTag() {
+          return `<img src=&quot;${document.location.protocol}//${document.location.host}${this.imageUrl}&quot; />`;
+        },
         submit(e) {
           const values = e.target.elements;
           this.width = values.width.value;
@@ -63,8 +72,8 @@
       <!-- Image -->
       <div class="lg:row-end-1 lg:col-span-4" aria-live="polite">
         <img
-          x-bind:src="'/g/' + width + '/' + height + '/' + backgroundColour.substring(1) + '/' + foregroundColour.substring(1)"
-          alt="Sample of 30 icons with friendly and fun details in outline, filled, and brand color styles."
+          x-bind:src="imageUrl"
+          x-bind:alt="imageDescription"
           class="object-center object-cover mx-auto"
         />
       </div>
@@ -168,7 +177,7 @@
           <pre
             class="p-5 bg-slate-700 text-white rounded-md overflow-x-scroll"
             aria-live="polite"
-          ><code x-text="'<img src=?' + document.location.protocol + '//' + document.location.host + '/g/' + width + '/' + height + '/' + backgroundColour.substring(1) + '/' + foregroundColour.substring(1) + '? />'"></code></pre>
+          ><code x-text="publicImageTag"></code></pre>
         </div>
       </form>
     </main>
