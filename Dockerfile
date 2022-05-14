@@ -18,6 +18,7 @@ RUN cargo install --path .
 FROM node:16 as static
 WORKDIR /ui
 COPY ./src/ui ./src/ui
+COPY ./meta ./meta
 COPY package.json .
 COPY package-lock.json .
 COPY tailwind.config.js .
@@ -32,4 +33,5 @@ WORKDIR /app
 # Get compiled binaries from builder's cargo install directory
 COPY --from=builder /usr/local/cargo/bin/placey /app/placey
 COPY --from=static /ui/dist /app/dist
+COPY --from=static /ui/meta /app/meta
 # No CMD or ENTRYPOINT, see fly.toml with `cmd` override.
