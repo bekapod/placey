@@ -40,17 +40,19 @@
   </head>
   <body class="bg-slate-50">
     <header
-      class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 text-center"
+      class="max-w-7xl mx-auto pt-20 pb-10 px-4 sm:pt-28 sm:pb-20 md:py-28 sm:px-6 lg:px-8 text-center"
     >
-      <span class="text-base font-medium text-rose-600 tracking-wide uppercase">
+      <span
+        class="text-base font-medium text-rose-600 tracking-wide uppercase bg-white py-1 px-2"
+      >
         Placeholder Image Generator
       </span>
       <h1
-        class="mt-1 text-4xl font-extrabold text-slate-900 sm:text-5xl sm:tracking-tight lg:text-6xl"
+        class="mt-5 text-4xl font-extrabold text-slate-900 sm:text-5xl sm:tracking-tight lg:text-6xl"
       >
         Placey
       </h1>
-      <p class="max-w-xl mt-5 mx-auto text-xl text-slate-500">
+      <p class="max-w-xl mt-5 mx-auto text-lg sm:text-xl text-slate-500">
         Yet another placeholder image generator. Choose a size & some colours
         below.
       </p>
@@ -100,7 +102,7 @@
 
       <!-- Generation form -->
       <form
-        class="max-w-2xl mx-auto mt-14 pt-8 sm:mt-16 lg:mx-0 lg:max-w-none lg:mt-0 lg:row-end-2 lg:row-span-2 lg:col-span-3 space-y-8 divide-y divide-slate-200"
+        class="max-w-2xl mx-auto pt-8 md:pt-20 lg:pt-2 xl:pt-10 lg:mx-0 lg:max-w-none lg:row-end-2 lg:row-span-2 lg:col-span-3 space-y-5 divide-y divide-slate-200"
         @submit.prevent="submit"
       >
         <h2 class="text-lg leading-6 font-medium text-slate-900">
@@ -123,7 +125,7 @@
             />
           </div>
 
-          <div class="mt-6 sm:col-span-3">
+          <div class="sm:mt-6 sm:col-span-3">
             <label
               for="height"
               class="block text-sm font-medium text-slate-700"
