@@ -17,7 +17,7 @@ RUN cargo install --path .
 # use a node image for building the site
 FROM node:16 as static
 WORKDIR /ui
-COPY ./src/ui .
+COPY ./src/ui ./src/ui
 COPY package.json .
 COPY package-lock.json .
 COPY tailwind.config.js .

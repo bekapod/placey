@@ -9,7 +9,7 @@
   },
   "scripts": {
     "watch:css": "npx tailwindcss -i ./src/ui/input.css -o ./dist/build.css --watch",
-    "build:css": "npx tailwindcss -o ./dist/build.css --minify"
+    "build:css": "npx tailwindcss -i ./src/ui/input.css -o ./dist/build.css --minify"
   },
   "keywords": [],
   "author": "Becky <https://github.com/bekapod>",
