@@ -84,6 +84,7 @@ async fn main() {
 async fn outer() {
     let end = warp::path("dist")
         .and(warp::fs::dir("./dist"))
+        .or(warp::path("meta").and(warp::fs::dir("./meta")))
         .or(index_route().or(generate_route()))
         .with(warp::log("request"))
         .with(warp::trace::request());
