@@ -11,9 +11,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;800&display=swap"
+    />
+    <link
       href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;800&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;800&display=swap&display=swap"
+      />
+    </noscript>
+    <link rel="preload" as="image" href="/g/1024/768/fda4af/000000" />
     <link href="/dist/build.css" rel="stylesheet" />
     <!-- favicon from https://twemoji.twitter.com/ -->
     <link rel="icon" href="/meta/favicon.ico" />
@@ -79,6 +93,8 @@
           x-bind:src="imageUrl"
           x-bind:alt="imageDescription"
           class="object-center object-cover mx-auto"
+          x-bind:width="width"
+          x-bind:height="height"
         />
       </div>
 
@@ -87,9 +103,9 @@
         class="max-w-2xl mx-auto mt-14 pt-8 sm:mt-16 lg:mx-0 lg:max-w-none lg:mt-0 lg:row-end-2 lg:row-span-2 lg:col-span-3 space-y-8 divide-y divide-slate-200"
         @submit.prevent="submit"
       >
-        <h3 class="text-lg leading-6 font-medium text-slate-900">
+        <h2 class="text-lg leading-6 font-medium text-slate-900">
           Generate Image
-        </h3>
+        </h2>
         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
           <div class="mt-6 sm:col-span-3">
             <label for="width" class="block text-sm font-medium text-slate-700">
