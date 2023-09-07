@@ -3,10 +3,6 @@ app = "placey"
 kill_signal = "SIGINT"
 kill_timeout = 5
 
-[experimental]
-# required because we can't infer your binary's name
-cmd = "./placey"
-
 [env]
 PORT = "8080"
 

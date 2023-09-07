@@ -1,18 +1,10 @@
 FROM rust:latest as builder
-# Make a fake Rust app to keep a cached layer of compiled crates
-RUN USER=root cargo new app
 WORKDIR /usr/src/app
-COPY Cargo.toml Cargo.lock ./
-# Needs at least a main.rs file with a main function
-RUN mkdir src && echo "fn main(){}" > src/main.rs
-# Will build all dependent crates in release mode
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/src/app/target \
-    cargo build --release
-# Copy the rest
 COPY . .
-# Build (install) the actual binaries
-RUN cargo install --path .
+# Will build and cache the binary and dependent crates in release mode
+RUN --mount=type=cache,target=/usr/local/cargo,from=rust:latest,source=/usr/local/cargo \
+    --mount=type=cache,target=target \
+    cargo build --release && mv ./target/release/placey ./placey
 
 # use a node image for building the site
 FROM node:16 as static
@@ -25,13 +17,15 @@ COPY tailwind.config.js .
 RUN npm i && npm run build:css
 
 # Runtime image
-FROM debian:bullseye-slim
+FROM rust:latest
 # Run as "app" user
 RUN useradd -ms /bin/bash app
 USER app
 WORKDIR /app
 # Get compiled binaries from builder's cargo install directory
-COPY --from=builder /usr/local/cargo/bin/placey /app/placey
+COPY --from=builder /usr/src/app/placey /app/placey
 COPY --from=static /ui/dist /app/dist
 COPY --from=static /ui/meta /app/meta
-# No CMD or ENTRYPOINT, see fly.toml with `cmd` override.
+
+# Run the app
+CMD ./placey
