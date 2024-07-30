@@ -110,10 +110,12 @@ jobs:
           file: "fly.toml"
           field: "app"
 
+      - name: 💻 Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+        if: ${{ github.ref == 'refs/heads/main' }}
+
       - name: 🚀 Deploy Production
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: superfly/flyctl-actions@v2
-        with:
-          args: "deploy --image registry.fly.io/${{ steps.app_name.outputs.value }}:${{ github.ref_name }}-${{ github.sha }}"
+        run: "flyctl deploy --image registry.fly.io/${{ steps.app_name.outputs.value }}:${{ github.ref_name }}-${{ github.sha }}"
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
