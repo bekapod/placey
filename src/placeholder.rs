@@ -55,7 +55,7 @@ pub fn generate(opts: GenerateOptions) -> Result<(Vec<u8>, String), (u16, String
         (w, None, Some(bg), None) if check_size(w, w).is_ok() => create_image(w, w, &bg, ""),
         (w, None, None, Some(fg)) if check_size(w, w).is_ok() => create_image(w, w, "", &fg),
         (w, None, None, None) if check_size(w, w).is_ok() => create_image(w, w, "", ""),
-        (_, _, _, _) => Err((422, format!("Image too big. Total area must be less than or equal to {}px and the maximum length of any side must be less than or equal to {}px.", MAX_AREA, MAX_SIDE))),
+        (_, _, _, _) => Err((422, format!("Image too big. Total area must be less than or equal to {MAX_AREA}px and the maximum length of any side must be less than or equal to {MAX_SIDE}px."))),
     }
 }
 
@@ -89,7 +89,7 @@ fn create_image(
     let font = Font::try_from_vec(font);
 
     if let Some(font) = font {
-        let text = format!("{}×{}", width, height);
+        let text = format!("{width}×{height}");
 
         let scale = match f32::from(width) {
             w if w > 999.0 => w * 0.15,
@@ -120,7 +120,7 @@ fn create_image(
     }
 
     match DynamicImage::ImageRgb8(img).write_to(&mut buffer, Png) {
-        Ok(_) => Ok((buffer.into_inner(), String::from("png"))),
+        Ok(()) => Ok((buffer.into_inner(), String::from("png"))),
         Err(_) => Err((500, String::from("Failed to generate image."))),
     }
 }

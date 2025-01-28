@@ -16,7 +16,7 @@ fn generate_route() -> warp::filters::BoxedFilter<(impl warp::Reply,)> {
         tracing::info!("route: generate");
         match placeholder::generate(opts) {
             Ok((img, ext)) => Response::builder()
-                .header("content-type", format!("image/{}", ext))
+                .header("content-type", format!("image/{ext}"))
                 .body(img),
             Err((status, message)) => Response::builder().status(status).body(message.into()),
         }

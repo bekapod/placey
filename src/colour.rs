@@ -97,7 +97,7 @@ impl std::convert::From<Rgb> for String {
 }
 
 fn hex_pair_to_int(a: char, b: char) -> Result<u8, std::num::ParseIntError> {
-    u8::from_str_radix(&format!("{}{}", a, b), 16)
+    u8::from_str_radix(&format!("{a}{b}"), 16)
 }
 
 fn is_valid_hex(hex: &str) -> bool {
