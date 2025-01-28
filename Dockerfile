@@ -7,13 +7,12 @@ RUN --mount=type=cache,target=/usr/local/cargo,from=rust:latest,source=/usr/loca
     cargo build --release && mv ./target/release/placey ./placey
 
 # use a node image for building the site
-FROM node:16 as static
+FROM node:22 as static
 WORKDIR /ui
 COPY ./src/ui ./src/ui
 COPY ./meta ./meta
 COPY package.json .
 COPY package-lock.json .
-COPY tailwind.config.js .
 RUN npm i && npm run build:css
 
 # Runtime image

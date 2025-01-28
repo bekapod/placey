@@ -8,13 +8,14 @@
     "url": "git+https://github.com/bekapod/placey.git"
   },
   "scripts": {
-    "watch:css": "npx tailwindcss -i ./src/ui/input.css -o ./dist/build.css --watch",
-    "build:css": "npx tailwindcss -i ./src/ui/input.css -o ./dist/build.css --minify"
+    "watch:css": "npx @tailwindcss/cli -i ./src/ui/input.css -o ./dist/build.css --watch",
+    "build:css": "npx @tailwindcss/cli -i ./src/ui/input.css -o ./dist/build.css --minify"
   },
   "keywords": [],
   "author": "Becky <https://github.com/bekapod>",
   "license": "MIT",
   "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
     "tailwindcss": "^4.0.0"
