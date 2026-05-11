@@ -11,7 +11,7 @@ log = "0.4"
 pretty_env_logger = "0.5"
 image = "0.24"
 tokio = { version = "1", features = ["full"] }
-warp = "0.3"
+warp = "0.4"
 imageproc = "0.23"
 rusttype = "0.9"
 tracing = "0.1"
