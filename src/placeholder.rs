@@ -1,9 +1,8 @@
 #![warn(clippy::all, clippy::pedantic)]
 use crate::colour::Rgb;
-use image::ImageOutputFormat::Png;
-use image::{DynamicImage, RgbImage};
+use ab_glyph::{FontRef, PxScale};
+use image::{DynamicImage, ImageFormat, RgbImage};
 use imageproc::drawing::{draw_text_mut, text_size};
-use rusttype::{Font, Scale};
 use std::io::Cursor;
 
 const MAX_AREA: u32 = 1_000_000;
@@ -85,10 +84,9 @@ fn create_image(
         ]),
     );
 
-    let font = Vec::from(include_bytes!("assets/AzeretMono-Regular.ttf") as &[u8]);
-    let font = Font::try_from_vec(font);
+    let font = FontRef::try_from_slice(include_bytes!("assets/AzeretMono-Regular.ttf"));
 
-    if let Some(font) = font {
+    if let Ok(font) = font {
         let text = format!("{width}×{height}");
 
         let scale = match f32::from(width) {
@@ -96,10 +94,10 @@ fn create_image(
             w if w < 100.0 => w * 0.25,
             w => w * 0.2,
         };
-        let scale = Scale { x: scale, y: scale };
+        let scale = PxScale::from(scale);
 
         let (text_width, text_height) = text_size(scale, &font, &text);
-        let x = i32::from(width / 2) - (text_width / 2);
+        let x = i32::from(width / 2) - i32::try_from(text_width / 2).unwrap_or(0);
         let y = i32::from(height / 2) - convert_f64_to_i32(f64::from(text_height) / 1.65);
 
         draw_text_mut(
@@ -119,7 +117,7 @@ fn create_image(
         log::error!("Invalid font data.");
     }
 
-    match DynamicImage::ImageRgb8(img).write_to(&mut buffer, Png) {
+    match DynamicImage::ImageRgb8(img).write_to(&mut buffer, ImageFormat::Png) {
         Ok(()) => Ok((buffer.into_inner(), String::from("png"))),
         Err(_) => Err((500, String::from("Failed to generate image."))),
     }
